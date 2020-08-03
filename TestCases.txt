@@ -1,0 +1,139 @@
+1.Send GET-request to invalid URL
+GET: http://localhost:8080/api/users/21 - when user with id = 21 haven't created yet
+Expected: Status Code 404 (Not Found)
+
+2. Try to delete non-existent user (Send DELETE-request to invalid URL)
+DELETE: http://localhost:8080/api/users/21 - when user with id = 21 haven't created yet
+Expected: Status Code 404 (Not Found)
+
+3. Try to send invalid POST-request
+POST: http://localhost:8080/api/users/21 - 'id' couldn't be indicated for user creation
+Expected: Status Code 404 (Not Found)
+
+4. Try to create user with invalid 'dayOfBirth' field:
+POST: http://localhost:8080/api/users/
+{
+  "firstName": "Ivan",
+  "lastName": "Portman",
+  "email": "workingemail-21gmail.com",
+  "dayOfBirth": "08-03-1970",                           //INVALID FIELD!
+  "_links": {
+    "self": {
+      "href": "http://localhost:8080/api/users/21"
+    },
+    "user": {
+      "href": "http://localhost:8080/api/users/21"
+    }
+  }
+} 
+Expected: Status Code 400 (Bad Request) and Validation error message
+
+5. Try to create user with numbers in 'firstName' field
+POST: http://localhost:8080/api/users/
+{
+  "firstName": "Ivan15",
+  "lastName": "Portman",
+  "email": "workingemail-21@gmail.com",
+  "dayOfBirth": "1970-03-08"
+}
+Expected: Status Code 201 (Created)
+
+6. Try to create user with email, which were busy by another user
+POST: http://localhost:8080/api/users/ 
+{     
+  "firstName": "Ivan",
+  "lastName": "Portman",
+  "email": "workingemail-1@gmail.com",
+  "dayOfBirth": "1970-03-08"
+}
+In this case user with workingemail-1@gmail.com already exists!
+Expected: Status Code 409 (Conflict)
+
+7. Try to create user with invalid email firstly and after that create user with valid email
+Step 1) 
+POST: http://localhost:8080/api/users/
+{  
+  "firstName": "Ivan",
+  "lastName": "Portman",
+  "email": "workingemail-1@gmail.com",
+  "dayOfBirth": "1970-03-08"
+}
+Expected: Status Code 409 (Conflict)
+Step 2)
+POST: http://localhost:8080/api/users/
+{
+  "firstName": "Ivan",
+  "lastName": "Portman",
+  "email": "workingemail-21@gmail.com",
+  "dayOfBirth": "1970-03-08"
+}
+Expected: Status Code 201 (Created)
+Step 3)
+GET: http://localhost:8080/api/users/21
+Actual: Status Code 404 (Not Found)
+Step 4) 
+GET: http://localhost:8080/api/users/22
+Actual: Status Code 200 (OK)
+Result: 'id' was incremented while was attempt to create invalid user
+
+8. Try to change 'id' by PUT-request with Postman
+Step1)
+GET: http://localhost:8080/api/users/5
+Result:
+{
+  "id": 5,
+  "firstName": "Mark",
+  "lastName": "Portman",
+  "email": "workingemail-5@gmail.com",
+  "dayOfBirth": "1985-08-03",
+  "_links": {
+    "self": {
+      "href": "http://localhost:8080/api/users/5"
+    },
+    "user": {
+      "href": "http://localhost:8080/api/users/5"
+    }
+  }
+Step2)
+PUT: http://localhost:8080/api/users/5
+{
+  "id": 6,
+  "firstName": "Mark",
+  "lastName": "Portman",
+  "email": "workingemail-5@gmail.com",
+  "dayOfBirth": "1985-08-03",
+  "_links": {
+    "self": {
+      "href": "http://localhost:8080/api/users/5"
+    },
+    "user": {
+      "href": "http://localhost:8080/api/users/5"
+    }
+  }
+}
+Expected: 'id' didn't change
+
+9. Try to delete all users
+DELETE: http://localhost:8080/api/users/1
+.........................................
+DELETE: http://localhost:8080/api/users/20
+Expected: page.totalElements = 0
+
+10. Try to connect remotely to API and perform several GET-requests from different browsers
+Step1)
+Connect selenoid(selenoid hub + selenoid ui) + docker infrastructure to the project;
+Step2)
+Add selenium dependency into pom.xml
+  <!-- https://mvnrepository.com/artifact/org.seleniumhq.selenium/selenium-java -->
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-java</artifactId>
+            <version>3.4.0</version>
+        </dependency>
+Step3)
+Create instances of RemoteWebDriver and set their capabilities
+Desired capabilities can be taken from "http://virtual_machine_where_docker_containers_up_IP:8080"
+driver = new RemoteWebDriver(new URL(http://virtual_machine_where_docker_containers_up_IP:4444/wd/hub), capbilities);
+
+Step4)
+GET: http://localhost:8080/api/users/ for each browser
